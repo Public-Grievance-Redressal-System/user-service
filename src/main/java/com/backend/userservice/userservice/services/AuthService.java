@@ -60,8 +60,7 @@ public class AuthService {
         UserDTO userDTO = UserDTO.from(user);
 
         MultiValueMapAdapter<String, String> headers = new MultiValueMapAdapter<>(new HashMap<>());
-        headers.add(HttpHeaders.SET_COOKIE, "auth-token:" + token);
-
+        headers.add(HttpHeaders.AUTHORIZATION, "Bearer " + token);
         return new ResponseEntity<>(userDTO, headers, HttpStatus.OK);
     }
 
@@ -86,13 +85,11 @@ public class AuthService {
         session.setSessionStatus(SessionStatus.ENDED);
         sessionRepository.save(session);
 
-        HttpHeaders responseHeaders = new HttpHeaders();
-        responseHeaders.add(HttpHeaders.SET_COOKIE, null);
 
-        return ResponseEntity
-                .ok()
-                .headers(responseHeaders)
-                .build();
+        MultiValueMapAdapter<String, String> headers = new MultiValueMapAdapter<>(new HashMap<>());
+        headers.add(HttpHeaders.AUTHORIZATION, "Bearer ");
+
+        return new ResponseEntity<>(headers, HttpStatus.OK);
     }
 
     public UserDTO signUp(String email, String password, String phoneNumber, String name, String address) {
