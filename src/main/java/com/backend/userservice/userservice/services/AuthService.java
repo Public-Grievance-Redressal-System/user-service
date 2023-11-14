@@ -3,6 +3,8 @@ package com.backend.userservice.userservice.services;
 import com.backend.userservice.userservice.dtos.UserDTO;
 import com.backend.userservice.userservice.enums.SessionStatus;
 import com.backend.userservice.userservice.exceptions.InvalidPasswordException;
+import com.backend.userservice.userservice.exceptions.InvalidToken;
+import com.backend.userservice.userservice.exceptions.UserNotFoundException;
 import com.backend.userservice.userservice.models.Session;
 import com.backend.userservice.userservice.models.User;
 import com.backend.userservice.userservice.repositories.SessionRepository;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMapAdapter;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -36,7 +39,7 @@ public class AuthService {
         Optional<User> userOptional = userRepository.findByEmail(email);
 
         if (userOptional.isEmpty()) {
-            return null;
+            throw new UserNotFoundException("User does not exist");
         }
 
         User user = userOptional.get();
@@ -62,39 +65,65 @@ public class AuthService {
         return new ResponseEntity<>(userDTO, headers, HttpStatus.OK);
     }
 
-    public ResponseEntity<Void> logout(String token, UUID userId) {
-        Optional<Session> sessionOptional = sessionRepository.findByTokenAndUserId(token, userId);
+    @SneakyThrows
+    public ResponseEntity<Void> logout(String token) {
+
+        Optional<User> userFromToken = jwtService.getUserFromToken(token);
+
+        if (userFromToken.isEmpty()) {
+            throw new InvalidToken("Invalid Token or User does not exists");
+        }
+        User user = userFromToken.get();
+
+
+        Optional<Session> sessionOptional = sessionRepository.findByTokenAndUserId(token, user.getId());
 
         if (sessionOptional.isEmpty()) {
-            return null;
+            throw new InvalidToken("Invalid Token or User does not exists");
         }
 
         Session session = sessionOptional.get();
-
         session.setSessionStatus(SessionStatus.ENDED);
-
         sessionRepository.save(session);
 
-        return ResponseEntity.ok().build();
+        HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.add(HttpHeaders.SET_COOKIE, null);
+
+        return ResponseEntity
+                .ok()
+                .headers(responseHeaders)
+                .build();
     }
 
-    public UserDTO signUp(String email, String password) {
+    public UserDTO signUp(String email, String password, String phoneNumber, String name, String address) {
         User user = new User();
         user.setEmail(email);
+        user.setPhoneNumber(phoneNumber);
+        user.setName(name);
+        user.setAddress(address);
         user.setPassword(passwordEncoder.encode(password));
         User savedUser = userRepository.save(user);
 
         return UserDTO.from(savedUser);
     }
 
-    public SessionStatus validate(String token, UUID userId) {
-        Optional<Session> sessionOptional = sessionRepository.findByTokenAndUserId(token, userId);
+    @SneakyThrows
+    public SessionStatus validate(String token) {
+
+        Optional<User> userFromToken = jwtService.getUserFromToken(token);
+
+        if (userFromToken.isEmpty()) {
+            return SessionStatus.ENDED;
+//            throw new InvalidToken("Invalid Token or User does not exists");
+        }
+        User user = userFromToken.get();
+        Optional<Session> sessionOptional = sessionRepository.findById(user.getId());
 
         if (sessionOptional.isEmpty()) {
-            return null;
+            return SessionStatus.ENDED;
         }
 
-        return SessionStatus.ACTIVE;
+        return sessionOptional.get().getSessionStatus();
     }
 
 

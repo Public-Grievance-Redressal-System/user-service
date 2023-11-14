@@ -29,6 +29,9 @@ public class JWTService {
 
         return Jwts.builder().subject(user.getName())
                 .claim("email", user.getEmail())
+                .claim("id", user.getId().toString())
+                .claim("phoneNumber", user.getPhoneNumber())
+                .claim("name", user.getName())
                 .claim("roles", user.getRoles().stream().map(Role::getRole).toList())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(
@@ -57,6 +60,9 @@ public class JWTService {
                 user.setRoles(Set.copyOf((Collection<? extends Role>) roles));
             }
             user.setEmail(claims.get("email", String.class));
+            user.setName(claims.get("name", String.class));
+            user.setId(UUID.fromString(claims.get("id", String.class)));
+            user.setPhoneNumber(claims.get("phoneNumber", String.class));
             return Optional.of(user);
         } catch (Exception e) {
             e.printStackTrace();

@@ -1,10 +1,7 @@
 package com.backend.userservice.userservice.controllers;
 
 
-import com.backend.userservice.userservice.dtos.LoginRequestDTO;
-import com.backend.userservice.userservice.dtos.SignUpRequestDTO;
-import com.backend.userservice.userservice.dtos.UserDTO;
-import com.backend.userservice.userservice.dtos.ValidateTokenRequestDTO;
+import com.backend.userservice.userservice.dtos.*;
 import com.backend.userservice.userservice.enums.SessionStatus;
 import com.backend.userservice.userservice.services.AuthService;
 import lombok.AllArgsConstructor;
@@ -28,19 +25,26 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public void logout() {
+    public ResponseEntity<Void> logout(@RequestBody LogoutRequestDTO request) {
+        return authService.logout(request.getToken());
     }
 
     @PostMapping("/signup")
     public ResponseEntity<UserDTO> signUp(@RequestBody SignUpRequestDTO request) {
-        UserDTO userDto = authService.signUp(request.getEmail(), request.getPassword());
+        UserDTO userDto = authService.signUp(
+                request.getEmail(),
+                request.getPassword(),
+                request.getPhoneNumber(),
+                request.getName(),
+                request.getAddress()
+        );
         return new ResponseEntity<>(userDto, HttpStatus.OK);
     }
 
     @PostMapping("/validate")
-    public ResponseEntity<SessionStatus> validateToken(@RequestBody ValidateTokenRequestDTO request) {
-        SessionStatus sessionStatus = authService.validate(request.getToken(), request.getUserId());
-        return new ResponseEntity<>(sessionStatus, HttpStatus.OK);
+    public ResponseEntity<ValidateTokenResponseDTO> validateToken(@RequestBody ValidateTokenRequestDTO request) {
+        SessionStatus sessionStatus = authService.validate(request.getToken());
+        return new ResponseEntity<>(new ValidateTokenResponseDTO(sessionStatus), HttpStatus.OK);
 
     }
 }

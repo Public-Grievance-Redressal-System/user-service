@@ -9,5 +9,4 @@ import java.util.UUID;
 @Setter
 public class ValidateTokenRequestDTO {
     private String token;
-    private UUID userId;
 }
