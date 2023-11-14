@@ -196,7 +196,7 @@ Used to .
 **Example Request:**
 
 ```http
-POST /auth/validate
+POST /roles/create
 Content-Type: application/json
 
 {
